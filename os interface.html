@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Banker's Algorithm Simulator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f5f5f5;
+    }
+    h2 {
+      color: #333;
+    }
+    textarea, input[type=number] {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      font-family: monospace;
+    }
+    button {
+      padding: 10px 20px;
+      background: #28a745;
+      color: white;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+    #output {
+      background: white;
+      padding: 15px;
+      border-radius: 6px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <h2>🔧 Banker's Algorithm Simulator</h2>
+
+  <label>Number of Processes:</label>
+  <input type="number" id="numP" value="5">
+
+  <label>Number of Resources:</label>
+  <input type="number" id="numR" value="3">
+
+  <label>Allocation Matrix (rows = processes, space-separated):</label>
+  <textarea id="alloc" rows="5">0 1 0
+2 0 0
+3 0 2
+2 1 1
+0 0 2</textarea>
+
+  <label>Maximum Matrix (rows = processes, space-separated):</label>
+  <textarea id="max" rows="5">7 5 3
+3 2 2
+9 0 2
+2 2 2
+4 3 3</textarea>
+
+  <label>Available Resources (space-separated):</label>
+  <input type="text" id="avail" value="3 3 2">
+
+  <button onclick="runBanker()">Run Banker's Algorithm</button>
+
+  <div id="output"></div>
+
+  <script>
+    function parseMatrix(text, rows, cols) {
+      const lines = text.trim().split("\n");
+      return lines.map(line => line.trim().split(/\s+/).map(Number));
+    }
+
+    function runBanker() {
+      const n = +document.getElementById("numP").value;
+      const m = +document.getElementById("numR").value;
+      const alloc = parseMatrix(document.getElementById("alloc").value, n, m);
+      const max = parseMatrix(document.getElementById("max").value, n, m);
+      const avail = document.getElementById("avail").value.trim().split(/\s+/).map(Number);
+
+      const need = Array.from({ length: n }, (_, i) => Array.from({ length: m }, (_, j) => max[i][j] - alloc[i][j]));
+      const finish = Array(n).fill(false);
+      const work = [...avail];
+      const safeSeq = [];
+
+      let changed;
+      do {
+        changed = false;
+        for (let i = 0; i < n; i++) {
+          if (!finish[i] && need[i].every((val, j) => val <= work[j])) {
+            for (let j = 0; j < m; j++) work[j] += alloc[i][j];
+            finish[i] = true;
+            safeSeq.push("P" + i);
+            changed = true;
+          }
+        }
+      } while (changed);
+
+      const output = document.getElementById("output");
+      if (safeSeq.length === n) {
+        output.innerHTML = `<b>✅ System is in a safe state.</b><br>Safe Sequence: ${safeSeq.join(" → ")}`;
+      } else {
+        output.innerHTML = `<b style="color:red;">⚠️ System is in an unsafe state. Deadlock may occur.</b>`;
+      }
+    }
+  </script>
+</body>
+</html>

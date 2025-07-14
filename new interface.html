@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Banker's Algorithm Simulator</title>
+  <style>
+    :root {
+      --main-color: #4a90e2;
+      --accent-color: #2ecc71;
+      --danger-color: #e74c3c;
+      --bg-color: #f0f4f8;
+      --card-color: #ffffff;
+      --font-color: #333;
+    }
+
+    * {
+      box-sizing: border-box;
+      transition: all 0.2s ease;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-color);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding-top: 30px;
+    }
+
+    .container {
+      background: var(--card-color);
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+      max-width: 800px;
+      width: 95%;
+    }
+
+    h2 {
+      text-align: center;
+      color: var(--main-color);
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+
+    label {
+      display: block;
+      margin: 15px 0 5px;
+      font-weight: 500;
+    }
+
+    textarea, input[type="text"], input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      background-color: #fafafa;
+    }
+
+    textarea:focus, input:focus {
+      outline: none;
+      border-color: var(--main-color);
+      background: #fff;
+    }
+
+    button {
+      background: var(--main-color);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      margin-top: 20px;
+      width: 100%;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+
+    button:hover {
+      background: #357ABD;
+      transform: translateY(-2px);
+    }
+
+    #output {
+      margin-top: 20px;
+      padding: 15px;
+      background: #fefefe;
+      border-left: 5px solid var(--accent-color);
+      border-radius: 8px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .danger {
+      border-left-color: var(--danger-color);
+      color: var(--danger-color);
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 20px;
+      }
+
+      button {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🔧 Banker's Algorithm Simulator</h2>
+
+    <label>Number of Processes:</label>
+    <input type="number" id="numP" value="5">
+
+    <label>Number of Resources:</label>
+    <input type="number" id="numR" value="3">
+
+    <label>Allocation Matrix (rows = processes, space-separated):</label>
+    <textarea id="alloc" rows="5">0 1 0
+2 0 0
+3 0 2
+2 1 1
+0 0 2</textarea>
+
+    <label>Maximum Matrix (rows = processes, space-separated):</label>
+    <textarea id="max" rows="5">7 5 3
+3 2 2
+9 0 2
+2 2 2
+4 3 3</textarea>
+
+    <label>Available Resources (space-separated):</label>
+    <input type="text" id="avail" value="3 3 2">
+
+    <button onclick="runBanker()">🚀 Run Banker's Algorithm</button>
+
+    <div id="output"></div>
+  </div>
+
+  <script>
+    function parseMatrix(text, rows, cols) {
+      return text.trim().split("\n").map(line => line.trim().split(/\s+/).map(Number));
+    }
+
+    function runBanker() {
+      const n = +document.getElementById("numP").value;
+      const m = +document.getElementById("numR").value;
+      const alloc = parseMatrix(document.getElementById("alloc").value, n, m);
+      const max = parseMatrix(document.getElementById("max").value, n, m);
+      const avail = document.getElementById("avail").value.trim().split(/\s+/).map(Number);
+
+      const need = Array.from({ length: n }, (_, i) =>
+        Array.from({ length: m }, (_, j) => max[i][j] - alloc[i][j])
+      );
+      const finish = Array(n).fill(false);
+      const work = [...avail];
+      const safeSeq = [];
+
+      let changed;
+      do {
+        changed = false;
+        for (let i = 0; i < n; i++) {
+          if (!finish[i] && need[i].every((val, j) => val <= work[j])) {
+            for (let j = 0; j < m; j++) work[j] += alloc[i][j];
+            finish[i] = true;
+            safeSeq.push("P" + i);
+            changed = true;
+          }
+        }
+      } while (changed);
+
+      const output = document.getElementById("output");
+      if (safeSeq.length === n) {
+        output.className = "";
+        output.innerHTML = `✅ <b>System is in a safe state.</b>\nSafe Sequence: ${safeSeq.join(" → ")}`;
+      } else {
+        output.className = "danger";
+        output.innerHTML = `⚠️ <b>System is in an unsafe state.</b>\nDeadlock may occur.`;
+      }
+    }
+  </script>
+</body>
+</html>
